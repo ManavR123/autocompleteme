@@ -76,7 +76,7 @@ class LSTMModel:
 
     def train(self):
         train_iterator = torchtext.data.BPTTIterator(
-            self.train_dataset, batch_size=64, bptt_len=32, device="cuda"
+            self.train_dataset, batch_size=64, bptt_len=32, device=device
         )
         h = Variable(
             torch.zeros(self.num_hidden_lstm_layers, 64, self.network.lstm.hidden_size),
@@ -124,7 +124,7 @@ class LSTMModel:
     def next_word_probabilities(self, text_prefix):
         "Return a list of probabilities for each word in the vocabulary."
 
-        prefix_token_tensor = torch.tensor(ids(text_prefix), device="cuda").view(-1, 1)
+        prefix_token_tensor = torch.tensor(ids(self.vocab, text_prefix), device=device).view(-1, 1)
 
         prefix_token_tensor = prefix_token_tensor.to(torch.int64).to(device)
         h = Variable(
@@ -142,7 +142,7 @@ class LSTMModel:
         state = (h, c)
         with torch.no_grad():
             self.network.eval()
-            output = self.network(prefix_token_tensor, state)
+            output, hidden = self.network(prefix_token_tensor, state)
             output = output.squeeze()
             probs = F.softmax(output, dim=-1)
             return probs[-1]
@@ -150,7 +150,7 @@ class LSTMModel:
     def dataset_perplexity(self, torchtext_dataset):
 
         iterator = torchtext.data.BPTTIterator(
-            torchtext_dataset, batch_size=64, bptt_len=32, device="cuda"
+            torchtext_dataset, batch_size=64, bptt_len=32, device=device
         )
 
         h = Variable(
