@@ -20,13 +20,12 @@
 .env.production.local
 .vscode/
 *__pycache__/
-*/predictions
+*predictions/
 
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
-server/models/predictions/
 server/saved_models/
 server/models/saved_lms
 *wikitext-2/
-*predictions/
+.eslintrc.json
