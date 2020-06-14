@@ -3,6 +3,7 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {
+    "@material-ui/core": "^4.10.2",
     "@testing-library/jest-dom": "^4.2.4",
     "@testing-library/react": "^9.3.2",
     "@testing-library/user-event": "^7.1.2",
@@ -12,7 +13,7 @@
   },
   "scripts": {
     "start": "react-scripts start",
-    "build": "react-scripts build && rm -rf deploy && mkdir deploy && cp -a server/. cddeploy/ && mv build deploy/static",
+    "build": "react-scripts build && rm -rf deploy && mkdir deploy && cp -a server/. deploy/ && mv build deploy/static",
     "test": "react-scripts test",
     "eject": "react-scripts eject"
   },
@@ -33,6 +34,12 @@
     ]
   },
   "devDependencies": {
+    "eslint": "^6.8.0",
+    "eslint-config-airbnb": "^18.1.0",
+    "eslint-plugin-import": "^2.21.2",
+    "eslint-plugin-jsx-a11y": "^6.2.3",
+    "eslint-plugin-react": "^7.20.0",
+    "eslint-plugin-react-hooks": "^2.5.1",
     "webpack-cli": "^3.3.9"
   }
 }
