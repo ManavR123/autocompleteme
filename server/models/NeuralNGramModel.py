@@ -1,10 +1,22 @@
+import math
+import os
+
+dirname = os.path.dirname(__file__)
+filename = os.path.join(dirname, "saved_lms/neural_langauge_model")
+
 import numpy as np
+from tqdm import tqdm
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-import math
-from utils import ids
-from tqdm import tqdm
+from models.utils import ids
+
+CUDA = torch.cuda.is_available()
+device = None
+if CUDA:
+    print("Cuda In Use")
+    device = torch.device("cuda")
 
 
 class NeuralNgramDataset(torch.utils.data.Dataset):
@@ -38,13 +50,13 @@ class NeuralNGramNetwork(nn.Module):
         super().__init__()
         self.n = n
 
-        self.embed = nn.Embedding(vocab_size, 128).cuda()
-        self.linear_1 = nn.Linear((self.n - 1) * 128, 1024).cuda()
-        self.linear_2 = nn.Linear(1024, 1024).cuda()
-        self.linear_3 = nn.Linear(1024, 128).cuda()
-        self.dropout = nn.Dropout(p=0.1).cuda()
-        self.linear_4 = nn.Linear(128, vocab_size).cuda()
-        self.softmax = nn.Softmax(dim=1).cuda()
+        self.embed = nn.Embedding(vocab_size, 128).to(device)
+        self.linear_1 = nn.Linear((self.n - 1) * 128, 1024).to(device)
+        self.linear_2 = nn.Linear(1024, 1024).to(device)
+        self.linear_3 = nn.Linear(1024, 128).to(device)
+        self.dropout = nn.Dropout(p=0.1).to(device)
+        self.linear_4 = nn.Linear(128, vocab_size).to(device)
+        self.softmax = nn.Softmax(dim=1).to(device)
 
     def forward(self, x):
         # x is a tensor of inputs with shape (batch, n-1)
@@ -74,7 +86,9 @@ class NeuralNGramModel:
         self.validation_text = validation_text
 
     def train(self):
-        dataset = NeuralNgramDataset(ids(self.train_text), self.vocab, self.n)
+        dataset = NeuralNgramDataset(
+            ids(self.vocab, self.train_text), self.vocab, self.n
+        )
         train_loader = torch.utils.data.DataLoader(
             dataset, batch_size=128, shuffle=True
         )
@@ -82,18 +96,18 @@ class NeuralNGramModel:
         # the first tensor will be previous token ids with size (batch, n-1),
         # and the second will be the current token id with size (batch, )
 
-        self.network.cuda()
+        self.network.to(device)
         optim = torch.optim.Adam(self.network.parameters())
         prev_validation = float("inf")
         for epoch in range(10):
             print("Epoch", epoch)
             self.network.train()
-            for batch in tqdm.notebook.tqdm(train_loader, leave=False):
+            for batch in tqdm(train_loader, leave=False):
                 assert (
                     self.network.training
                 ), "make sure your network is in train mode with `.train()`"
                 prev, curr = batch
-                prev, curr = prev.cuda(), curr.cuda()
+                prev, curr = prev.to(device), curr.to(device)
                 optim.zero_grad()
                 output = self.network(prev)
                 loss = F.cross_entropy(output, curr)
@@ -104,8 +118,10 @@ class NeuralNGramModel:
             print("Validation score:", validation_pp)
 
             if validation_pp < prev_validation:
-                torch.save(self.network.state_dict(), "neural_language_model.pkl")
+                torch.save(self.network.state_dict(), filename)
                 prev_validation = validation_pp
+
+        self.network.load_state_dict(torch.load(filename))
 
     def next_word_probabilities(self, text_prefix):
         while len(text_prefix) < self.n - 1:
@@ -113,7 +129,7 @@ class NeuralNGramModel:
         if len(text_prefix) > self.n - 1:
             text_prefix = text_prefix[len(text_prefix) - self.n + 1 :]
         self.network.eval()
-        x = torch.Tensor(ids(text_prefix)).to(torch.int64).cuda()
+        x = torch.Tensor(ids(self.vocab, text_prefix)).to(torch.int64).to(device)
         x = x.reshape((1, len(x)))
         probs = self.network.softmax(self.network(x))[0]
         return probs
@@ -121,14 +137,14 @@ class NeuralNGramModel:
     def perplexity(self, text):
         with torch.no_grad():
             self.network.eval()
-            data = NeuralNgramDataset(ids(text), self.vocab, self.n)
+            data = NeuralNgramDataset(ids(self.vocab, text), self.vocab, self.n)
             log_probabilities = []
             count = 0
             for text in tqdm(data):
                 if count > 100:
                     break
                 count += 1
-                x = text[0].cuda()
+                x = text[0].to(device)
                 x = x.reshape((1, len(x)))
                 probs = self.network.softmax(self.network(x))[0]
                 log_probabilities.append(math.log(probs[text[1].item()]))

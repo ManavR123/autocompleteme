@@ -1,5 +1,5 @@
 from collections import defaultdict
-from NGramModel import NGramModel
+from models.NGramModel import NGramModel
 
 
 class DiscountBackoffModel(NGramModel):
@@ -8,10 +8,13 @@ class DiscountBackoffModel(NGramModel):
         self.lower_order_model = lower_order_model
         self.discount = delta
 
-        self.n_1 = defaultdict(lambda: set())
+        self.n_1 = defaultdict(self.create_set)
         for c in self.counts:
             temp = c.split(" ")
             self.n_1[" ".join(temp[:-1])].add(temp[-1])
+
+    def create_set(self):
+        return set()
 
     def n_gram_probability(self, n_gram):
         assert len(n_gram) == self.n

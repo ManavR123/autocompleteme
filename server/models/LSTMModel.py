@@ -1,12 +1,24 @@
+import math
+import os
+
 import numpy as np
+from tqdm import tqdm
+
 import torch
 import torch.nn as nn
 import torch.nn.functional as F
-from torch.autograd import Variable
 import torchtext
-import math
-from utils import ids
-from tqdm import tqdm
+from models.utils import ids
+from torch.autograd import Variable
+
+dirname = os.path.dirname(__file__)
+filename = os.path.join(dirname, "saved_lms/lstm_langauge_model")
+
+CUDA = torch.cuda.is_available()
+device = None
+if CUDA:
+    print("Cuda In Use")
+    device = torch.device("cuda")
 
 
 class LSTMNetwork(nn.Module):
@@ -15,9 +27,9 @@ class LSTMNetwork(nn.Module):
     def __init__(self, vocab_size, num_hidden_lstm_layers=3):
         super().__init__()
 
-        self.lstm = nn.LSTM(128, 512, num_hidden_lstm_layers, dropout=0.5).cuda()
-        self.linear = nn.Linear(512, 128).cuda()
-        self.linear_2 = nn.Linear(128, vocab_size).cuda()
+        self.lstm = nn.LSTM(128, 512, num_hidden_lstm_layers, dropout=0.5).to(device)
+        self.linear = nn.Linear(512, 128).to(device)
+        self.linear_2 = nn.Linear(128, vocab_size).to(device)
         self.dp = nn.Dropout(0.5)
 
     def forward(self, x, state):
@@ -56,7 +68,7 @@ class LSTMModel:
     def __init__(
         self, train_dataset, validation_dataset, vocab, num_hidden_lstm_layers=3
     ):
-        self.network = LSTMNetwork(len(vocab), num_hidden_lstm_layers).cuda()
+        self.network = LSTMNetwork(len(vocab), num_hidden_lstm_layers).to(device)
         self.train_dataset = train_dataset
         self.validation_dataset = validation_dataset
         self.vocab = vocab
@@ -69,25 +81,25 @@ class LSTMModel:
         h = Variable(
             torch.zeros(self.num_hidden_lstm_layers, 64, self.network.lstm.hidden_size),
             requires_grad=False,
-        ).cuda()
+        ).to(device)
         c = Variable(
             torch.zeros(self.num_hidden_lstm_layers, 64, self.network.lstm.hidden_size),
             requires_grad=False,
-        ).cuda()
+        ).to(device)
         state = (h, c)
         optim = torch.optim.Adam(self.network.parameters())
         prev_validation = float("inf")
-        for epoch in range(20):
+        for epoch in range(50):
             print("Epoch", epoch + 1)
             self.network.train()
-            for batch in tqdm.tqdm_notebook(train_iterator, leave=False):
+            for batch in tqdm(train_iterator, leave=False):
                 assert (
                     self.network.training
                 ), "make sure your network is in train mode with `.train()`"
                 text, target = batch.text, batch.target
                 text, target = (
-                    text.to(torch.int64).cuda(),
-                    target.to(torch.int64).cuda(),
+                    text.to(torch.int64).to(device),
+                    target.to(torch.int64).to(device),
                 )
                 optim.zero_grad()
 
@@ -114,7 +126,7 @@ class LSTMModel:
 
         prefix_token_tensor = torch.tensor(ids(text_prefix), device="cuda").view(-1, 1)
 
-        prefix_token_tensor = prefix_token_tensor.to(torch.int64).cuda()
+        prefix_token_tensor = prefix_token_tensor.to(torch.int64).to(device)
         h = Variable(
             next(self.network.parameters()).data.new(
                 self.num_hidden_lstm_layers, 1, self.network.lstm.hidden_size
@@ -146,13 +158,13 @@ class LSTMModel:
                 self.num_hidden_lstm_layers, 64, self.network.lstm.hidden_size
             ),
             requires_grad=False,
-        ).cuda()
+        ).to(device)
         c = Variable(
             next(self.network.parameters()).data.new(
                 self.num_hidden_lstm_layers, 64, self.network.lstm.hidden_size
             ),
             requires_grad=False,
-        ).cuda()
+        ).to(device)
         state = (h, c)
 
         nll = 0.0
