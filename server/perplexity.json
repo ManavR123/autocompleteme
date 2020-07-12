@@ -6,5 +6,6 @@
     "trigram_kn_backoff": 256.59,
     "neural_trigram": 180.8,
     "LSTM": 117,
+    "GPT2": 37.5,
     "None": ""
 }

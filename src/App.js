@@ -14,6 +14,7 @@ const models = [
   'trigram_kn_backoff',
   'neural_trigram',
   'LSTM',
+  'GPT2',
 ];
 
 const useStyles = makeStyles(() => ({
@@ -61,14 +62,16 @@ const App = () => {
   useEffect(() => {
     const url = `/get_perplexity?model_name=${model}`;
 
-    fetch(url, { method: 'GET' }).then((response) => {
+    fetch(url, {
+      method: 'GET',
+    }).then((response) => {
       response.json().then((data) => {
         setPerplexity(data);
       });
     });
   }, [model]);
 
-  const onTextChange = ((event) => {
+  const onTextChange = (event) => {
     const url = '/next_word';
     const text = event.target.value;
     if (text[text.length - 1] !== ' ') {
@@ -81,13 +84,16 @@ const App = () => {
         Accept: 'application/json',
         'Content-Type': 'application/json',
       },
-      body: JSON.stringify({ model_name: model, text }),
+      body: JSON.stringify({
+        model_name: model,
+        text,
+      }),
     }).then((response) => {
       response.json().then((data) => {
         setNextWord(data);
       });
     });
-  });
+  };
 
   const handleDropDownChange = (event) => {
     setModel(event.target.value);
@@ -95,7 +101,7 @@ const App = () => {
 
   const onKeyDown = (event) => {
     event.persist();
-    if (event.keyCode === 9) {
+    if (event.keyCode === 9 && nextWord != 'loading...') {
       event.preventDefault();
       // eslint-disable-next-line no-param-reassign
       event.target.value += nextWord;
@@ -106,36 +112,39 @@ const App = () => {
   return (
     <div className={classes.app}>
       <div className={classes.title}>
-        autocomp
-        <span className={classes.boldLetter}>L</span>
-        ete
-        <span className={classes.boldLetter}> M</span>
-        e
-      </div>
-      <div className={classes.subtitle}>Interact with Language Models</div>
+        autocomp <span className={classes.boldLetter}> L </span>ete{' '}
+        <span className={classes.boldLetter}> M </span>e{' '}
+      </div>{' '}
+      <div className={classes.subtitle}> Interact with Language Models </div>{' '}
       <div className={classes.dropdown}>
-        <InputLabel htmlFor="age-native-helper">Pick a Language Model</InputLabel>
+        <InputLabel htmlFor="age-native-helper">
+          Pick a Language Model{' '}
+        </InputLabel>{' '}
         <FormControl className={classes.formControl}>
-          <NativeSelect
-            value={model}
-            onChange={handleDropDownChange}
-          >
-            <option key="None" value="None">None</option>
-            {models.map((modelName) => <option key={modelName} value={modelName}>{modelName}</option>)}
-          </NativeSelect>
-          <FormHelperText>
-            {`perplexity: ${perplexity}`}
-          </FormHelperText>
-        </FormControl>
-      </div>
+          <NativeSelect value={model} onChange={handleDropDownChange}>
+            <option key="None" value="None">
+              None{' '}
+            </option>{' '}
+            {models.map((modelName) => (
+              <option key={modelName} value={modelName}>
+                {' '}
+                {modelName}{' '}
+              </option>
+            ))}{' '}
+          </NativeSelect>{' '}
+          <FormHelperText> {`perplexity: ${perplexity}`} </FormHelperText>{' '}
+        </FormControl>{' '}
+      </div>{' '}
       <div className={classes.textField}>
-        <FilledInput color="primary" onChange={onTextChange} onKeyDown={onKeyDown} fullWidth multiline />
-      </div>
-      <div>
-        Suggested next word:
-        {' '}
-        {nextWord}
-      </div>
+        <FilledInput
+          color="primary"
+          onChange={onTextChange}
+          onKeyDown={onKeyDown}
+          fullWidth
+          multiline
+        />
+      </div>{' '}
+      <div> Suggested next word: {nextWord} </div>{' '}
     </div>
   );
 };

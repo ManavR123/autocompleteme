@@ -29,4 +29,3 @@ yarn-error.log*
 server/saved_models/
 server/models/saved_lms
 *wikitext-2/
-.eslintrc.json

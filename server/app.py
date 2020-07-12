@@ -5,6 +5,7 @@ import pickle
 import torch
 
 from flask import Flask, jsonify, request, send_from_directory
+from transformers import GPT2LMHeadModel, GPT2Tokenizer
 
 import torchtext
 from models.DiscountBackoffModel import DiscountBackoffModel
@@ -17,7 +18,6 @@ from models.utils import ids
 from torchtext.data import get_tokenizer
 
 app = Flask(__name__, static_url_path="", static_folder="static")
-
 
 
 tokenizer = get_tokenizer("basic_english")
@@ -35,6 +35,7 @@ dirname = os.path.dirname(__file__)
 
 perplexities = json.load(open(os.path.join(dirname, "perplexity.json")))
 
+
 @app.route("/")
 def index():
     return send_from_directory("static", "index.html")
@@ -49,6 +50,21 @@ def next_word():
         return jsonify({"response": "Error! Must select a model"})
     elif model_name == "None":
         return jsonify("")
+
+    if model_name == "GPT2":
+        gpt_tokenizer = GPT2Tokenizer.from_pretrained("gpt2")
+        model = GPT2LMHeadModel.from_pretrained(
+            "gpt2", pad_token_id=gpt_tokenizer.eos_token_id)
+        input_ids = gpt_tokenizer.encode(text[-100:], return_tensors='pt')
+        sample_output = model.generate(
+            input_ids,
+            do_sample=True,
+            top_k=50,
+            top_p=0.95
+        )
+        output = gpt_tokenizer.decode(
+            sample_output[0], skip_special_tokens=True)
+        return jsonify(output[len(text):])
 
     filename = os.path.join(dirname, "saved_models/" + model_name + ".pkl")
     model = torch.load(filename, map_location=torch.device('cpu'))
