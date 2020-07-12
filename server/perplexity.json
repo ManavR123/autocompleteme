@@ -4,7 +4,7 @@
     "trigram": 2965.51,
     "trigram_backoff": 271.1,
     "trigram_kn_backoff": 256.59,
-    "neural_trigram": 205,
+    "neural_trigram": 180.8,
     "LSTM": 117,
     "None": ""
 }

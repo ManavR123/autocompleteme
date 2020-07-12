@@ -14,8 +14,10 @@
   "scripts": {
     "start": "react-scripts start",
     "build": "react-scripts build && rm -rf deploy && mkdir deploy && cp -a server/. deploy/ && mv build deploy/static",
+    "deploy": "cd deploy/ && rm -rf .git && rm -rf wikitext-2/ models/eval_text/ models/predictions/ models/wikitext-2/ __pycache__/ models/__pycache__/ && git init && git add -A && git commit -m \"init\" && heroku git:remote -a autocompleteme && git push heroku master",
     "test": "react-scripts test",
-    "eject": "react-scripts eject"
+    "eject": "react-scripts eject",
+    "update": "cd deploy/ && rm -rf wikitext-2/ models/eval_text/ models/predictions/ models/wikitext-2/ __pycache__/ models/__pycache__/ && git add -A && git commit -m \"update\" && git push heroku master"
   },
   "proxy": "http://localhost:5000/",
   "eslintConfig": {
