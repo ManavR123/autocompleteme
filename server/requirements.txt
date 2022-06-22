@@ -16,7 +16,7 @@ itsdangerous==1.1.0
 Jinja2==2.11.2
 MarkupSafe==1.1.1
 murmurhash==1.0.2
-numpy==1.18.5
+numpy==1.22.0
 pathspec==0.8.0
 Pillow==7.1.2
 plac==1.1.3
